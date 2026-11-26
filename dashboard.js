@@ -1,45 +1,4 @@
-const tasks = [
-    {
-        title: "Build the TechBridge Homepage",
-        description: "Create the first version of the TechBridge website using HTML and CSS.",
-        status: "completed"
-    },
-    {
-        title: "Build the TechBridge Programs Experience",
-        description: "Create a Programs experience presenting TechBridge's available learning programs.",
-        status: "completed"
-    },
-    {
-        title: "Build the Internship Tasks Experience",
-        description: "Create an interface that presents the TechBridge internship tasks and helps users understand the internship journey.",
-        status: "completed"
-    },
-    {
-        title: "Build an Interactive Internship Roadmap",
-        description: "Use JavaScript to allow visitors to switch between the Data Analytics and Web Development internship tracks.",
-        status: "completed"
-    },
-    {
-        title: "Build the Intern Registration Experience",
-        description: "Create a professional registration and onboarding interface for TechBridge interns.",
-        status: "completed"
-    },
-    {
-        title: "Build the Task Submission System",
-        description: "Create an interface through which interns can prepare and submit their task work.",
-        status: "completed"
-    },
-    {
-        title: "Build the Intern Dashboard",
-        description: "Create a dashboard where an intern can view their profile, progress, tasks, and submissions.",
-        status: "in-progress"
-    },
-    {
-        title: "Build the Complete TechBridge Internship Platform",
-        description: "Combine the different components created during the internship into a complete TechBridge platform.",
-        status: "not-started"
-    }
-];
+let tasks = [];
 
 const technologies = {
     nextjs: {
@@ -87,7 +46,35 @@ const taskDialogContent = document.querySelector("#task-dialog-content");
 const dialogClose = document.querySelector(".dashboard-dialog .dialog-close");
 const techTabs = document.querySelectorAll(".tech-tab");
 const techPanel = document.querySelector("#tech-panel");
+const backendStatus = document.querySelector("#backend-status");
+const apiMessage = document.querySelector("#dashboard-api-message");
 let activeFilter = "all";
+
+async function requestJson(url, options) {
+    let response;
+    try {
+        response = await fetch(url, options);
+    } catch (error) {
+        setBackendStatus(false);
+        throw error;
+    }
+    setBackendStatus(true);
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || "The request could not be completed.");
+    }
+    return data;
+}
+
+function setBackendStatus(connected) {
+    backendStatus.textContent = `Backend Status: ${connected ? "Connected" : "Offline"}`;
+    backendStatus.dataset.state = connected ? "connected" : "offline";
+}
+
+function setApiMessage(message, isError) {
+    apiMessage.textContent = message;
+    apiMessage.dataset.state = isError ? "error" : "";
+}
 
 function createElement(tag, className, text) {
     const element = document.createElement(tag);
@@ -103,7 +90,7 @@ function createElement(tag, className, text) {
 function createTaskCard(task, index) {
     const card = createElement("article", `dashboard-task-card task-${task.status}`);
     const top = createElement("div", "dashboard-task-top");
-    const number = createElement("span", "dashboard-task-number", `TASK ${index + 1}`);
+    const number = createElement("span", "dashboard-task-number", `TASK ${task.id || index + 1}`);
     const status = createElement("span", `dashboard-task-status status-${task.status}`, task.status.replace("-", " "));
     status.textContent = task.status === "in-progress" ? "In Progress" : task.status === "not-started" ? "Not Started" : "Completed";
     top.append(number, status);
@@ -113,23 +100,13 @@ function createTaskCard(task, index) {
     const actions = createElement("div", "dashboard-task-actions");
     const viewButton = createElement("button", "dashboard-view-task", "View Task");
     viewButton.type = "button";
-    viewButton.addEventListener("click", () => showTaskDetails(task, index));
+    viewButton.addEventListener("click", () => loadTaskDetails(task.id, index));
     actions.append(viewButton);
 
     if (task.status !== "completed") {
         const completeButton = createElement("button", "dashboard-complete-task", "Mark as Completed");
         completeButton.type = "button";
-        completeButton.addEventListener("click", () => {
-            const wasCurrentTask = task.status === "in-progress";
-            task.status = "completed";
-            if (wasCurrentTask) {
-                const nextTask = tasks.find((nextTask) => nextTask.status === "not-started");
-                if (nextTask) {
-                    nextTask.status = "in-progress";
-                }
-            }
-            renderTasks();
-        });
+        completeButton.addEventListener("click", () => updateTaskStatus(task, completeButton));
         actions.append(completeButton);
     }
 
@@ -139,7 +116,11 @@ function createTaskCard(task, index) {
 
 function renderTasks() {
     const visibleTasks = tasks.filter((task) => activeFilter === "all" || task.status === activeFilter);
-    taskGrid.replaceChildren(...visibleTasks.map((task) => createTaskCard(task, tasks.indexOf(task))));
+    if (tasks.length === 0) {
+        taskGrid.replaceChildren(createElement("p", "dashboard-task-message", "No tasks are available right now."));
+    } else {
+        taskGrid.replaceChildren(...visibleTasks.map((task) => createTaskCard(task, tasks.indexOf(task))));
+    }
     taskCount.textContent = `${visibleTasks.length} ${visibleTasks.length === 1 ? "task" : "tasks"} shown`;
 
     const counts = {
@@ -154,7 +135,7 @@ function renderTasks() {
 
     const completed = counts.completed;
     const remaining = tasks.length - completed;
-    const percentage = (completed / tasks.length) * 100;
+    const percentage = tasks.length ? (completed / tasks.length) * 100 : 0;
     const percentageText = Number.isInteger(percentage) ? String(percentage) : percentage.toFixed(1);
     completedCount.textContent = String(completed);
     remainingCount.textContent = String(remaining);
@@ -170,11 +151,82 @@ function renderTasks() {
 function showTaskDetails(task, index) {
     const heading = createElement("h2", "dashboard-dialog-title", task.title);
     heading.id = "task-dialog-title";
-    const number = createElement("p", "dashboard-dialog-number", `TASK ${index + 1}`);
+    const number = createElement("p", "dashboard-dialog-number", `TASK ${task.id || index + 1}`);
     const description = createElement("p", "dashboard-dialog-description", task.description);
     const status = createElement("p", `dashboard-dialog-status status-${task.status}`, `Status: ${task.status === "in-progress" ? "In Progress" : task.status === "not-started" ? "Not Started" : "Completed"}`);
     taskDialogContent.replaceChildren(number, heading, description, status);
     taskDialog.showModal();
+}
+
+async function loadTaskDetails(taskId, index) {
+    taskDialogContent.replaceChildren(createElement("p", "dashboard-dialog-description", "Loading task details..."));
+    taskDialog.showModal();
+    try {
+        const task = await requestJson(`/api/tasks/${encodeURIComponent(taskId)}`);
+        showTaskDetails(task, index);
+    } catch (error) {
+        taskDialogContent.replaceChildren(
+            createElement("h2", "dashboard-dialog-title", "Unable to load task"),
+            createElement("p", "dashboard-dialog-description", error.message)
+        );
+    }
+}
+
+async function updateTaskStatus(task, button) {
+    button.disabled = true;
+    setApiMessage("", false);
+    try {
+        const wasCurrentTask = task.status === "in-progress";
+        const updatedTask = await requestJson(`/api/tasks/${encodeURIComponent(task.id)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "completed" })
+        });
+        tasks = tasks.map((currentTask) => currentTask.id === updatedTask.id ? updatedTask : currentTask);
+        const nextTask = wasCurrentTask ? tasks.find((currentTask) => currentTask.status === "not-started") : null;
+        if (nextTask) {
+            try {
+                const advancedTask = await requestJson(`/api/tasks/${encodeURIComponent(nextTask.id)}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status: "in-progress" })
+                });
+                tasks = tasks.map((currentTask) => currentTask.id === advancedTask.id ? advancedTask : currentTask);
+            } catch (error) {
+                renderTasks();
+                setApiMessage(`Task completed, but the next task could not be started. ${error.message}`, true);
+                return;
+            }
+        }
+        renderTasks();
+    } catch (error) {
+        button.disabled = false;
+        setApiMessage(`Unable to update task. ${error.message}`, true);
+    }
+}
+
+function showLoadError(error) {
+    setBackendStatus(false);
+    taskCount.textContent = "";
+    taskGrid.replaceChildren(
+        createElement("p", "dashboard-task-message", "Unable to load tasks. Please check your connection or try again.")
+    );
+    const retryButton = createElement("button", "dashboard-retry-button", "Try again");
+    retryButton.type = "button";
+    retryButton.addEventListener("click", loadTasks);
+    taskGrid.append(retryButton);
+    setApiMessage(error.message, true);
+}
+
+async function loadTasks() {
+    taskGrid.replaceChildren(createElement("p", "dashboard-task-message", "Loading tasks..."));
+    setApiMessage("", false);
+    try {
+        tasks = await requestJson("/api/tasks");
+        renderTasks();
+    } catch (error) {
+        showLoadError(error);
+    }
 }
 
 function showTechnology(key) {
@@ -204,7 +256,7 @@ filterButtons.forEach((button) => {
         filterButtons.forEach((filterButton) => {
             filterButton.setAttribute("aria-pressed", String(filterButton === button));
         });
-        renderTasks();
+        loadTasks();
     });
 });
 

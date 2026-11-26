@@ -84,6 +84,7 @@
                 </div>
                 <p>Mark tasks complete as you go, or open any task for more details.</p>
             </div>
+            <p class="backend-status" id="backend-status" aria-live="polite">Backend Status: Connecting...</p>
             <div class="dashboard-filters" role="group" aria-label="Filter internship tasks">
                 <button class="dashboard-filter" type="button" data-filter="all" aria-pressed="true">All <span data-filter-count="all"></span></button>
                 <button class="dashboard-filter" type="button" data-filter="completed" aria-pressed="false">Completed <span data-filter-count="completed"></span></button>
@@ -91,7 +92,10 @@
                 <button class="dashboard-filter" type="button" data-filter="not-started" aria-pressed="false">Not Started <span data-filter-count="not-started"></span></button>
             </div>
             <p class="dashboard-task-count" id="task-count" aria-live="polite"></p>
-            <div class="dashboard-task-grid" id="dashboard-task-grid" aria-live="polite"></div>
+            <p class="dashboard-api-message" id="dashboard-api-message" aria-live="polite"></p>
+            <div class="dashboard-task-grid" id="dashboard-task-grid" aria-live="polite">
+                <p class="dashboard-task-message">Loading tasks...</p>
+            </div>
             <noscript><p class="roadmap-noscript">Please enable JavaScript to view and update your internship progress.</p></noscript>
         </section>
 

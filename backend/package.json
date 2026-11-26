@@ -1,0 +1,13 @@
+{
+  "name": "techbridge-task-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Express API for the TechBridge internship dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

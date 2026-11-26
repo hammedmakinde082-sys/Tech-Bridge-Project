@@ -2850,6 +2850,69 @@ h1 em, h2 em{
 	color: white;
 }
 
+.dashboard-task-actions button:disabled{
+	opacity: .6;
+	cursor: wait;
+}
+
+.backend-status{
+	width: fit-content;
+	margin: -10px 0 16px;
+	color: #536157;
+	font-size: 10px;
+	font-weight: 700;
+}
+
+.backend-status::before{
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	margin-right: 7px;
+	border-radius: 50%;
+	background: #bc8a45;
+	content: "";
+}
+
+.backend-status[data-state="connected"]::before{
+	background: #39805d;
+}
+
+.backend-status[data-state="offline"]::before{
+	background: #b84d3f;
+}
+
+.dashboard-api-message{
+	margin: 0 0 12px;
+	color: #536157;
+	font-size: 11px;
+}
+
+.dashboard-api-message[data-state="error"]{
+	color: #a63e34;
+}
+
+.dashboard-task-message{
+	grid-column: 1 / -1;
+	margin: 0;
+	color: #536157;
+	font-size: 12px;
+	line-height: 1.7;
+}
+
+.dashboard-retry-button{
+	width: fit-content;
+	min-height: 38px;
+	border: 1px solid var(--green);
+	border-radius: 3px;
+	padding: 0 13px;
+	background: var(--green);
+	color: white;
+	cursor: pointer;
+	font: inherit;
+	font-size: 10px;
+	font-weight: 700;
+}
+
 .dashboard-challenges{
 	display: flex;
 	align-items: center;
